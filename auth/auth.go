@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -103,39 +102,4 @@ func ExtractWithSecret(token, jwtSecret string) (jwt.MapClaims, error) {
 		return nil, &echo.HTTPError{Code: http.StatusUnauthorized, Message: "invalid token"}
 	}
 	return claimInfo, nil
-}
-
-func GetTokenInfo(ctx echo.Context) (jwt.MapClaims, error) {
-	var token string
-	if authHeader := ctx.Request().Header.Get(echo.HeaderAuthorization); strings.HasPrefix(authHeader, "Bearer ") {
-		token = authHeader[7:]
-	} else {
-		return nil, nil
-	}
-	userMapClaims, err := Extract(token)
-	if err != nil {
-		return nil, &echo.HTTPError{Code: http.StatusUnauthorized, Message: "invalid token(Extract):There is no valid information.(" + token + "):" + err.Error()}
-	} else if userMapClaims == nil {
-		return nil, &echo.HTTPError{Code: http.StatusUnauthorized, Message: "invalid token(Extract.userMapClaims):There is no valid information.(" + token + ")"}
-	}
-	return userMapClaims, nil
-}
-
-func GetTokenInfoByAuthHeader(authHeader string) (jwt.MapClaims, string, error) {
-	var token string
-	if strings.HasPrefix(authHeader, "Bearer ") {
-		token = authHeader[7:]
-		if token == "undefined" || token == "" || token == "null" {
-			return nil, "", nil
-		}
-	} else {
-		return nil, "", nil
-	}
-	userMapClaims, err := Extract(token)
-	if err != nil {
-		return nil, "", &echo.HTTPError{Code: http.StatusUnauthorized, Message: "invalid token(Extract):There is no valid information.(" + token + "):" + err.Error()}
-	} else if userMapClaims == nil {
-		return nil, "", &echo.HTTPError{Code: http.StatusUnauthorized, Message: "invalid token(Extract.userMapClaims):There is no valid information.(" + token + ")"}
-	}
-	return userMapClaims, token, nil
 }
