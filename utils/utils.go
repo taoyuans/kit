@@ -1,12 +1,10 @@
 package utils
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/behaviorlog"
 )
 
 var ProjectName string = "[Colleague]"
@@ -106,9 +104,6 @@ func ReturnApiFailAutoStatus(ctx echo.Context, apiError ApiError, err error, v .
 			msg = err.Error()
 		}
 	}
-
-	logContext := behaviorlog.FromCtx(ctx.Request().Context())
-	logContext.WithError(errors.New(fmt.Sprint(msg)))
 
 	return ctx.JSON(status, ApiResult{
 		Success: false,
