@@ -62,97 +62,6 @@ var ContentType = contentType{
 	MIMEOctetStream:                      "application/octet-stream",
 }
 
-func POST(token, url string, param interface{}, v interface{}) error {
-	b, err := json.Marshal(param)
-	if err != nil {
-		return err
-	}
-
-	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
-	httpReq.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		httpReq.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := (&http.Client{}).Do(httpReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
-	}
-	if v != nil {
-		dec := json.NewDecoder(resp.Body)
-		if err := dec.Decode(&v); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func GET(token, url string, v interface{}) error {
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return fmt.Errorf("HTTP New Request Error: %s", err)
-	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP Request Error: %s", err)
-	}
-
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
-	}
-
-	if v != nil {
-		dec := json.NewDecoder(resp.Body)
-		if err := dec.Decode(&v); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-func PUT(token, url string, param interface{}, v interface{}) error {
-	b, err := json.Marshal(param)
-	if err != nil {
-		return err
-	}
-
-	httpReq, err := http.NewRequest("PUT", url, bytes.NewBuffer(b))
-	httpReq.Header.Set("Content-Type", "application/json")
-	if token != "" {
-		httpReq.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := (&http.Client{}).Do(httpReq)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
-	}
-	if v != nil {
-		dec := json.NewDecoder(resp.Body)
-		if err := dec.Decode(&v); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func NewPost(url string, param []byte, header *Header, transport *http.Transport) ([]byte, error) {
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(param))
@@ -177,8 +86,12 @@ func NewPost(url string, param []byte, header *Header, transport *http.Transport
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
+		errMsg, err := GetErrorMessage(resp)
+		if err != nil {
+			return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, err.Error())}
+
+		}
+		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, errMsg)}
 	}
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -213,9 +126,14 @@ func NewGet(url string, header *Header, transport *http.Transport) ([]byte, erro
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
+		errMsg, err := GetErrorMessage(resp)
+		if err != nil {
+			return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, err.Error())}
+
+		}
+		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, errMsg)}
 	}
+
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -257,12 +175,37 @@ func NewPostFile(url string, paramTexts map[string]interface{}, paramFile FileIt
 	defer resp.Body.Close()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		b, _ := ioutil.ReadAll(resp.Body)
-		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
+		errMsg, err := GetErrorMessage(resp)
+		if err != nil {
+			return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, err.Error())}
+
+		}
+		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, errMsg)}
 	}
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 	return respData, nil
+}
+
+func GetErrorMessage(resp *http.Response) (string, error) {
+	respData, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var v struct {
+		Result  interface{} `json:"result"`
+		Success bool        `json:"success"`
+		Error   struct {
+			Code    int         `json:"code,omitempty"`
+			Details interface{} `json:"details,omitempty"`
+			Message string      `json:"message,omitempty"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(respData, &v); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprint(v.Error.Details), nil
 }

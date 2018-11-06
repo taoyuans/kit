@@ -93,7 +93,7 @@ func ReturnApiParameterWarn(c echo.Context, parameters []string) error {
 	})
 }
 
-func ReturnApiFailAutoStatus(ctx echo.Context, apiError ApiError, err error, v ...interface{}) error {
+func ReturnApiFail(ctx echo.Context, apiError ApiError, err error, v ...interface{}) error {
 	status := http.StatusInternalServerError //默认是500错误
 	var msg interface{}
 	if err != nil {
@@ -109,8 +109,8 @@ func ReturnApiFailAutoStatus(ctx echo.Context, apiError ApiError, err error, v .
 		Success: false,
 		Error: ApiError{
 			Code:    apiError.Code,
-			Message: ProjectName + fmt.Sprintf(apiError.Message, v...),
-			Details: fmt.Sprint(msg),
+			Message: fmt.Sprintf(apiError.Message, v...),
+			Details: ProjectName + fmt.Sprint(msg),
 		},
 	})
 }
