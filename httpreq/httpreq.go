@@ -7,6 +7,8 @@ import (
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/labstack/echo"
 )
 
 type contentType struct {
@@ -79,7 +81,7 @@ func POST(token, url string, param interface{}, v interface{}) error {
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("[%d %s]%s", resp.StatusCode, resp.Status, string(b))
+		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
 	}
 	if v != nil {
 		dec := json.NewDecoder(resp.Body)
@@ -108,7 +110,7 @@ func GET(token, url string, v interface{}) error {
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("[%d %s]%s", resp.StatusCode, resp.Status, string(b))
+		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
 	}
 
 	if v != nil {
@@ -139,7 +141,7 @@ func PUT(token, url string, param interface{}, v interface{}) error {
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("[%d %s]%s", resp.StatusCode, resp.Status, string(b))
+		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
 	}
 	if v != nil {
 		dec := json.NewDecoder(resp.Body)
@@ -176,7 +178,7 @@ func NewPost(url string, param []byte, header *Header, transport *http.Transport
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("[%d %s]%s", resp.StatusCode, resp.Status, string(b))
+		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
 	}
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -212,7 +214,7 @@ func NewGet(url string, header *Header, transport *http.Transport) ([]byte, erro
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("[%d %s]%s", resp.StatusCode, resp.Status, string(b))
+		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
 	}
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -256,7 +258,7 @@ func NewPostFile(url string, paramTexts map[string]interface{}, paramFile FileIt
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		b, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("[%d %s]%s", resp.StatusCode, resp.Status, string(b))
+		return nil, &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, string(b))}
 	}
 	respData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
