@@ -29,7 +29,7 @@ func NewToken(m map[string]interface{}) (string, error) {
 		"iss": "colleague",
 		"aud": "colleague",
 		"nbf": time.Now().Add(-time.Minute * 5).Unix(),
-		"exp": time.Now().Add(time.Minute * 10).Unix(),
+		"exp": time.Now().Add(time.Hour * 15).Unix(),
 	}
 	for k, v := range m {
 		claims[k] = v
