@@ -76,8 +76,8 @@ func ReturnApiWarn(ctx echo.Context, status int, apiError ApiError, err error) e
 		Success: false,
 		Error: ApiError{
 			Code:    apiError.Code,
-			Message: ProjectName + fmt.Sprintf(apiError.Message),
-			Details: str,
+			Message: fmt.Sprintf(apiError.Message),
+			Details: ProjectName + str,
 		},
 	})
 }
@@ -87,8 +87,8 @@ func ReturnApiParameterWarn(c echo.Context, parameters []string) error {
 		Success: false,
 		Error: ApiError{
 			Code:    ApiErrorParameter.Code,
-			Message: ProjectName + fmt.Sprintf(ApiErrorParameter.Message),
-			Details: fmt.Sprint(parameters),
+			Message: fmt.Sprintf(ApiErrorParameter.Message),
+			Details: ProjectName + fmt.Sprint(parameters),
 		},
 	})
 }
