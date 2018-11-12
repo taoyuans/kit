@@ -62,6 +62,75 @@ var ContentType = contentType{
 	MIMEOctetStream:                      "application/octet-stream",
 }
 
+func POST(token, url string, param interface{}, v interface{}) error {
+	b, err := json.Marshal(param)
+	if err != nil {
+		return err
+	}
+
+	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
+	httpReq.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := (&http.Client{}).Do(httpReq)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		errMsg, err := GetErrorMessage(resp)
+		if err != nil {
+			return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, err.Error())}
+
+		}
+		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, errMsg)}
+	}
+	if v != nil {
+		dec := json.NewDecoder(resp.Body)
+		if err := dec.Decode(&v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func GET(token, url string, v interface{}) error {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("HTTP New Request Error: %s", err)
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("HTTP Request Error: %s", err)
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		errMsg, err := GetErrorMessage(resp)
+		if err != nil {
+			return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, err.Error())}
+
+		}
+		return &echo.HTTPError{Code: resp.StatusCode, Message: fmt.Sprintf("[%s]%s", resp.Status, errMsg)}
+	}
+
+	if v != nil {
+		dec := json.NewDecoder(resp.Body)
+		if err := dec.Decode(&v); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func NewPost(url string, param []byte, header *Header, transport *http.Transport) ([]byte, error) {
 
 	httpReq, err := http.NewRequest("POST", url, bytes.NewBuffer(param))

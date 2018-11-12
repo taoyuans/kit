@@ -1,7 +1,7 @@
 package email
 
 import (
-	"colleague/taoyuan-shop-api/kit/httpreq"
+	"colleague/taoyuan-kit/httpreq"
 )
 
 const sendEmailUrl string = "https://gateway.p2shop.com.cn/alert-service/mail"
