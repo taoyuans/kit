@@ -69,7 +69,7 @@ func ReturnResultApiSucc(ctx echo.Context, status int, result interface{}) error
 func ReturnApiWarn(ctx echo.Context, status int, apiError ApiError, err error) error {
 	str := ""
 	if err != nil {
-		str = err.Error()
+		str = fmt.Sprint(err)
 	}
 
 	return ctx.JSON(status, ApiResult{
@@ -98,10 +98,12 @@ func ReturnApiFail(ctx echo.Context, apiError ApiError, err error, v ...interfac
 	var msg interface{}
 	if err != nil {
 		if errResult, ok := err.(*echo.HTTPError); ok {
+			fmt.Println(errResult)
 			status = errResult.Code
 			msg = errResult.Message
+			fmt.Println(errResult)
 		} else {
-			msg = err.Error()
+			msg = fmt.Sprint(err)
 		}
 	}
 
